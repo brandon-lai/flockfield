@@ -3,7 +3,7 @@
 **A shared browser pasture where every visitor gets one sheep, tied to their device, living on one plain with everyone else's.** The sheep wander, graze, nap and play on their own. Yours earns EXP for every minute the tab is open and in view. Tap any sheep to see which country its owner is in.
 
 - Pasture: https://flockfield.vercel.app
-- Realtime server: the `flockfield` Cloudflare Worker (URL in [The state of it](#the-state-of-it))
+- Realtime server: https://flockfield.flockfield-server.workers.dev (`/stats` for live numbers)
 
 ## How it's built
 
@@ -98,6 +98,8 @@ How each was checked: **unit** = `tests/shared.test.ts`, **integration** = `test
 
 See the commit log for what verification found and fixed.
 
+Production is the real shared pasture: the client on Vercel (deployed from `main`), the Worker plus Durable Object on Cloudflare, and a real `IP_HASH_SECRET`. The pasture starts with 40 wild sheep and two test sheep I created while verifying production.
+
 **Owner checklist** (things only a person can do):
 1. **Play it on a phone and a 2020-era laptop.** Pinch zoom, frame rate, and whether the sound is pleasant or annoying at real volume.
 2. **Turn on deploys from GitHub for the Worker.** Vercel deploys the client on every push. The Worker's first deploy was made from a clean export of a commit (see the commit message). For later pushes to deploy it, add a Cloudflare API token as a repo secret, and `.github/workflows/worker.yml` takes over:
@@ -106,6 +108,7 @@ See the commit log for what verification found and fixed.
    gh secret set CLOUDFLARE_API_TOKEN --repo brandon-lai/flockfield
    gh secret set CLOUDFLARE_ACCOUNT_ID --repo brandon-lai/flockfield --body 78d3d855efbaa5308c3f0585e34b5d45
    ```
-3. Tune by feel: behaviour durations (`shared/sim.ts`), the EXP curve (`shared/levels.ts`), the wild-sheep floor (`WILD_FLOOR`).
+3. The Cloudflare account had no workers.dev subdomain, so the first deploy registered `flockfield-server.workers.dev`. That name is account-wide; rename it in the dashboard (Workers → Subdomain) if you'd rather have another, then update `VITE_PASTURE_URL` in Vercel.
+4. Tune by feel: behaviour durations (`shared/sim.ts`), the EXP curve (`shared/levels.ts`), the wild-sheep floor (`WILD_FLOOR`).
 
 `/stats` on the Worker reports connections, live/owned/wild sheep, messages per second and tick cost. Watch it before the single object needs splitting.
