@@ -105,6 +105,20 @@ export class Pasture {
   }
 
   add(init: SheepInit, now: number, arriving = false): SimSheep {
+    // A saved spot can end up inside scenery if the map changes; step out to the nearest clear one.
+    if (blocked(init.x, init.z, SHEEP_R)) {
+      outer: for (let d = 1; d < 40; d += 1) {
+        for (let k = 0; k < 12; k++) {
+          const a = (k / 12) * Math.PI * 2;
+          const x = init.x + Math.cos(a) * d;
+          const z = init.z + Math.sin(a) * d;
+          if (!blocked(x, z, SHEEP_R + 0.3)) {
+            init = { ...init, x, z };
+            break outer;
+          }
+        }
+      }
+    }
     const s: SimSheep = {
       id: init.id,
       traits: init.traits,

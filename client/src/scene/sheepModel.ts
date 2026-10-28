@@ -268,6 +268,7 @@ attribute vec3 iFace;
 uniform float uTime;
 uniform vec3 uBow[5];
 varying float vFade;
+varying float vSkip;
 
 mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1.,0.,0., 0.,c,s, 0.,-s,c); }
 mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0.,-s, 0.,1.,0., s,0.,c); }
@@ -305,7 +306,7 @@ void sheepPose(inout vec3 p, inout vec3 n) {
       if (iAcc.z < 0.5) p *= 0.0;
     #endif
     // Lambs have bigger heads. That is the whole trick.
-    p *= 1.0 + lamb * 0.42;
+    p *= 1.14 + lamb * 0.3;
     mat3 hr = rotY(iHead.y) * rotX(iHead.x) * rotZ(iHead.z);
     p = vec3(${NECK.x.toFixed(3)}, ${NECK.y.toFixed(3)}, ${NECK.z.toFixed(3)}) + hr * p;
     n = hr * n;
@@ -335,7 +336,7 @@ void sheepPose(inout vec3 p, inout vec3 n) {
       float breath = sin(t * mix(1.9, 1.05, lie)) * mix(0.018, 0.035, lie);
       float puff = iLook.y;
       vec3 c = vec3(0.0, 0.98, -0.04);
-      p = c + (p - c) * vec3(1.0 + puff * 0.1 + breath, 1.0 + puff * 0.06 + breath * 1.4, 1.0 + puff * 0.07);
+      p = c + (p - c) * vec3(1.0 + puff * 0.07 + breath, 1.0 + puff * 0.045 + breath * 1.4, 1.0 + puff * 0.05);
       // A woolly wobble when walking.
       p.y += abs(sin(iMotion.x)) * 0.05 * walk;
     #endif
@@ -374,6 +375,7 @@ void sheepPose(inout vec3 p, inout vec3 n) {
 
 const DITHER = /* glsl */ `
 varying float vFade;
+varying float vSkip;
 float bayer4(vec2 q) {
   ivec2 i = ivec2(mod(q, 4.0));
   int idx = i.x + i.y * 4;
@@ -382,7 +384,12 @@ float bayer4(vec2 q) {
 }
 `;
 
-export function sheepMaterial(part: Part, uniforms: { uTime: { value: number } }): THREE.Material {
+/**
+ * LOD cross-fade: the near batch draws the pixels where the dither value is
+ * below its weight, the far batch (LOD_FAR) exactly the complement, so a
+ * sheep in the band is always fully covered -- never see-through, never doubled.
+ */
+export function sheepMaterial(part: Part, uniforms: { uTime: { value: number } }, far = false): THREE.Material {
   if (part === "shadow") {
     const m = new THREE.ShaderMaterial({
       uniforms: { ...uniforms, uBow: { value: BOW.map((c) => new THREE.Color(c)) }, fogColor: { value: new THREE.Color() }, uNight: { value: 0 } },
@@ -417,6 +424,7 @@ export function sheepMaterial(part: Part, uniforms: { uTime: { value: number } }
     [`PART_${part.toUpperCase()}`]: "",
     ...(HEAD_PARTS.includes(part) ? { PART_HEAD: "" } : {}),
     ...(fixedColor ? { PART_FIXED: "" } : {}),
+    ...(far ? { LOD_FAR: "" } : {}),
   };
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uTime = uniforms.uTime;
@@ -432,21 +440,41 @@ export function sheepMaterial(part: Part, uniforms: { uTime: { value: number } }
          vec3 objectTangent = vec3(tangent.xyz);
          #endif`,
       )
-      .replace("#include <begin_vertex>", "vec3 transformed = gPosed; vFade = iLook.w;")
+      .replace(
+        "#include <begin_vertex>",
+        `vec3 transformed = gPosed; vFade = iLook.w;
+         #ifdef LOD_FAR
+           vSkip = iAcc.y;
+         #else
+           vSkip = 0.0;
+         #endif`,
+      )
       .replace(
         "#include <color_vertex>",
-        `#if defined(PART_FIXED)
-           vColor = color;
+        `#include <color_vertex>
+         #if defined(PART_FIXED)
+           vColor.rgb = color.rgb;
          #elif defined(PART_BOW)
            int bi = int(iAcc.w + 0.5);
-           vColor = uBow[bi] * color.g;
+           vColor.rgb = uBow[bi] * color.g;
          #else
-           vColor = mix(iFace, iWool, color.r) * color.g;
+           vColor.rgb = mix(iFace, iWool, color.r) * color.g;
          #endif`,
       );
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", `#include <common>\n${DITHER}`)
-      .replace("void main() {", "void main() {\n  if (vFade < 0.995 && bayer4(gl_FragCoord.xy) >= vFade) discard;")
+      .replace(
+        "void main() {",
+        `void main() {
+          float dth = bayer4(gl_FragCoord.xy);
+          #ifdef LOD_FAR
+            if (dth < vSkip) discard;
+            // Appear/leave fades use a shifted pattern so they compose with the LOD split.
+            if (vFade < 0.995 && bayer4(gl_FragCoord.xy + vec2(1.0, 2.0)) >= vFade) discard;
+          #else
+            if (vFade < 0.995 && dth >= vFade) discard;
+          #endif`,
+      )
       // Felt: a soft bright rim, so wool reads as fuzzy rather than plastic.
       .replace(
         "#include <aomap_fragment>",
@@ -458,6 +486,6 @@ export function sheepMaterial(part: Part, uniforms: { uTime: { value: number } }
       );
   };
   // Different defines need different programs.
-  m.customProgramCacheKey = () => `sheep-${part}`;
+  m.customProgramCacheKey = () => `sheep-${part}${far ? "-far" : ""}`;
   return m;
 }

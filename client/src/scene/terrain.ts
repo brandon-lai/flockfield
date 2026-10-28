@@ -126,15 +126,15 @@ vec4 cellInfo(out vec2 wp, out float wet, out float meadow) {
 function tuftGeometry(): THREE.BufferGeometry {
   const pos: number[] = [];
   const tip: number[] = [];
-  const blades = 5;
+  const blades = 7;
   for (let b = 0; b < blades; b++) {
     const a = (b / blades) * Math.PI * 2 + b * 0.7;
-    const r = 0.05 + (b % 3) * 0.05;
+    const r = 0.04 + (b % 3) * 0.06;
     const bx = Math.cos(a) * r;
     const bz = Math.sin(a) * r;
-    const w = 0.085;
-    const h = 0.42 + ((b * 7) % 5) * 0.06;
-    const lean = 0.14;
+    const w = 0.06;
+    const h = 0.24 + ((b * 7) % 5) * 0.035;
+    const lean = 0.1;
     const px = Math.cos(a + 1.57) * w;
     const pz = Math.sin(a + 1.57) * w;
     pos.push(bx - px, 0, bz - pz, bx + px, 0, bz + pz, bx + Math.cos(a) * lean, h, bz + Math.sin(a) * lean);
@@ -211,7 +211,7 @@ function patch(kind: "grass" | "flower", heightTex: THREE.Texture, n: number, ce
           p.xz = mat2(cos(ang), -sin(ang), sin(ang), cos(ang)) * p.xz;
           // Wind: a slow travelling gust plus a quick flutter, tips only.
           float gust = sin(wp.x * 0.08 + wp.y * 0.05 + uTime * 1.3) * 0.5 + 0.5;
-          float bend = aTip * (0.12 + 0.22 * gust) ;
+          float bend = aTip * (0.05 + 0.12 * gust);
           p.x += bend * (0.8 + 0.2 * sin(uTime * 4.0 + hs.x * 20.0));
           p.z += bend * 0.35 * sin(uTime * 3.1 + hs.y * 20.0);
           float gy = groundAt(wp);
@@ -240,16 +240,18 @@ function patch(kind: "grass" | "flower", heightTex: THREE.Texture, n: number, ce
     const color =
       kind === "grass"
         ? /* glsl */ `
-          vec3 base = mix(vec3(0.45, 0.66, 0.31), vec3(0.52, 0.70, 0.33), vHash);
-          vec3 tipc = mix(vec3(0.70, 0.84, 0.44), vec3(0.80, 0.86, 0.47), vHash);
+          vec3 base = mix(vec3(0.20, 0.42, 0.10), vec3(0.25, 0.47, 0.12), vHash);
+          vec3 tipc = mix(vec3(0.36, 0.60, 0.16), vec3(0.45, 0.64, 0.18), vHash);
           diffuseColor.rgb = mix(base, tipc, vTip);`
         : /* glsl */ `
-          vec3 petals[4] = vec3[4](vec3(1.0, 0.99, 0.95), vec3(1.0, 0.84, 0.35), vec3(0.98, 0.70, 0.80), vec3(0.78, 0.70, 0.98));
+          vec3 petals[4] = vec3[4](vec3(0.95, 0.94, 0.88), vec3(1.0, 0.66, 0.1), vec3(0.95, 0.42, 0.58), vec3(0.56, 0.45, 0.95));
           vec3 pc = petals[int(vHash * 3.99)];
-          diffuseColor.rgb = vTip < 0.25 ? vec3(0.42, 0.62, 0.3) : (vTip > 0.75 ? vec3(1.0, 0.8, 0.28) : pc);`;
+          diffuseColor.rgb = vTip < 0.25 ? vec3(0.15, 0.36, 0.08) : (vTip > 0.75 ? vec3(1.0, 0.6, 0.06) : pc);`;
     sh.fragmentShader = sh.fragmentShader
       .replace("#include <common>", "#include <common>\nvarying float vTip;\nvarying float vHash;")
-      .replace("#include <color_fragment>", `#include <color_fragment>\n${color}`);
+      .replace("#include <color_fragment>", `#include <color_fragment>\n${color}`)
+      // Light blades and petals like the ground under them, whichever side faces the camera.
+      .replace("#include <normal_fragment_begin>", "#include <normal_fragment_begin>\nnormal = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);");
   };
   m.customProgramCacheKey = () => `patch-${kind}`;
   const mesh = new THREE.Mesh(geo, m);
@@ -264,7 +266,7 @@ export class Meadow {
   readonly flowers: Patch;
 
   constructor(scene: THREE.Scene, mobile: boolean) {
-    this.grass = patch("grass", this.heightTex, mobile ? 120 : 170, 1.45, 70, 118);
+    this.grass = patch("grass", this.heightTex, mobile ? 150 : 210, 1.0, 50, 92);
     this.flowers = patch("flower", this.heightTex, mobile ? 64 : 84, 3.1, 80, 128);
     scene.add(this.ground, this.grass.mesh, this.flowers.mesh);
   }

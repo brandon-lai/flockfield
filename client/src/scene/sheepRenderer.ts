@@ -31,6 +31,7 @@ class Batch {
     parts: [M.Part, THREE.BufferGeometry][],
     uniforms: { uTime: { value: number } },
     scene: THREE.Scene,
+    far = false,
   ) {
     for (const k of Object.keys(STRIDE) as AttrName[]) {
       this.arrays[k] = new Float32Array(cap * STRIDE[k]);
@@ -43,7 +44,7 @@ class Batch {
       if (g.index) geo.setIndex(g.index);
       for (const k of Object.keys(STRIDE) as AttrName[]) geo.setAttribute(k, this.attrs[k]);
       geo.instanceCount = 0;
-      const mesh = new THREE.Mesh(geo, M.sheepMaterial(part, uniforms));
+      const mesh = new THREE.Mesh(geo, M.sheepMaterial(part, uniforms, far));
       mesh.frustumCulled = false;
       mesh.renderOrder = part === "shadow" ? -1 : 0;
       scene.add(mesh);
@@ -137,6 +138,7 @@ export class SheepRenderer {
       ],
       this.uniforms,
       scene,
+      true,
     );
 
     this.ringMat = new THREE.ShaderMaterial({
@@ -208,9 +210,20 @@ export class SheepRenderer {
         this.nearIds.add(s.id);
       }
       // The far batch always holds the shadow; its blob body fades as the near one appears.
-      this.far.write(s, (1 - nearW) * life, colorsOf);
-      // The shadow belongs to both LODs, so it reads its fade from iAcc.x (unused by far parts).
-      this.far.arrays.iAcc[(this.far.count - 1) * 4] = life;
+      // The far batch holds every sheep: shadow (fade in iAcc.x), and a blob that
+      // skips the dither cells the near batch draws (iAcc.y). Far parts never
+      // use the accessory flags, so those slots are free.
+      if (nearW < 0.999) {
+        this.far.write(s, life, colorsOf);
+        const o = (this.far.count - 1) * 4;
+        this.far.arrays.iAcc[o] = life;
+        this.far.arrays.iAcc[o + 1] = nearW;
+      } else {
+        this.far.write(s, 0, colorsOf);
+        const o = (this.far.count - 1) * 4;
+        this.far.arrays.iAcc[o] = life;
+        this.far.arrays.iAcc[o + 1] = 1;
+      }
       this.v.set(s.x, s.y + 0.9 * (size / 1.55), s.z).project(camera);
       this.drawn.push({ s, px: this.v.x, py: this.v.y, r: px, dist });
     }

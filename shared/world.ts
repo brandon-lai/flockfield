@@ -78,12 +78,15 @@ function generate(): WorldMap {
 
   // Trees grow in groves, plus a few loners so the plain is not bare.
   const trees: Tree[] = [];
-  const groves = 46;
+  // The first 400 x 400 is all most visitors will see on day one, so it gets
+  // a few groves of its own on top of the scattered ones.
+  const groves = 46 + 8;
   for (let g = 0; g < groves; g++) {
-    const gx = range(r, -MAX_HALF, MAX_HALF);
-    const gz = range(r, -MAX_HALF, MAX_HALF);
+    const home = g >= 46;
+    const gx = home ? range(r, -170, 170) : range(r, -MAX_HALF, MAX_HALF);
+    const gz = home ? range(r, -170, 170) : range(r, -MAX_HALF, MAX_HALF);
     // Keep the spawn meadow open.
-    if (Math.hypot(gx, gz) < 45) continue;
+    if (Math.hypot(gx, gz) < 45 || nearPond(gx, gz, 12)) continue;
     const n = 3 + Math.floor(r() * 7);
     for (let i = 0; i < n; i++) {
       const a = r() * Math.PI * 2;
@@ -176,8 +179,9 @@ export function terrainHeight(x: number, z: number): number {
   let h = rolling(x, z);
   for (const p of WORLD.ponds) {
     const d = Math.hypot(x - p.x, z - p.z);
-    const inner = p.r + 1.6;
-    const outer = p.r + 11;
+    // The ground mesh has ~8-unit spacing, so the flat rim must be wider than that.
+    const inner = p.r + 9;
+    const outer = p.r + 22;
     if (d < outer) {
       // Flat rim at the water line out past the shore, easing back into the hills.
       const t = d <= inner ? 1 : 1 - (d - inner) / (outer - inner);
@@ -214,7 +218,8 @@ function addCircle(c: Circle) {
   for (let cx = x0; cx <= x1; cx++) for (let cz = z0; cz <= z1; cz++) cellAt(cx, cz).circles.push(c);
 }
 for (const p of WORLD.ponds) addCircle({ x: p.x, z: p.z, r: p.r + 1.2 });
-for (const t of WORLD.trees) addCircle({ x: t.x, z: t.z, r: t.r * 0.55 });
+// The whole canopy, not just the trunk: from above, a sheep under a tree is a sheep you can't see.
+for (const t of WORLD.trees) addCircle({ x: t.x, z: t.z, r: t.r * 1.15 });
 for (const k of WORLD.rocks) if (k.r > 0.6) addCircle({ x: k.x, z: k.z, r: k.r });
 for (const w of WORLD.walls) {
   const len = Math.hypot(w.bx - w.ax, w.bz - w.az);

@@ -114,3 +114,12 @@ describe("simulation", () => {
     expect(p.sheep.size).toBe(20);
   });
 });
+
+describe("placement", () => {
+  it("moves a sheep saved inside scenery out to clear ground", () => {
+    const t = WORLD.trees[0];
+    const p = new Pasture();
+    const s = p.add({ id: "x", traits: rollTraits(rng(1)), country: "FR", level: 1, x: t.x, z: t.z }, 0);
+    expect(blocked(s.intent.from[0], s.intent.from[1], 0.95)).toBe(false);
+  });
+});

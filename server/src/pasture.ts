@@ -29,6 +29,8 @@ export interface Env {
   IP_HASH_SECRET?: string;
   /** Seconds of visible time per EXP. 60 in production; tests shorten it. */
   EXP_SECONDS?: string;
+  /** A heartbeat gap longer than this means the tab was hidden. Defaults to 1.5 heartbeats; tests shorten it. */
+  BEAT_GAP_SECONDS?: string;
   /** Registrations allowed per IP per hour. */
   REGISTER_PER_HOUR?: string;
   WILD_FLOOR?: string;
@@ -71,8 +73,6 @@ interface Row {
   [k: string]: SqlStorageValue;
 }
 
-/** A heartbeat more than this long after the last one means the tab was hidden; the gap earns nothing. */
-const BEAT_GAP_MS = HEARTBEAT_MS * 1.5;
 const FLUSH_MS = 60_000;
 const MAX_MSG = 8_192;
 const MAX_CHUNKS = 400;
@@ -91,6 +91,8 @@ export class PastureDO extends DurableObject<Env> {
   private timer: ReturnType<typeof setInterval> | null = null;
   private lastFlush = Date.now();
   private expMs: number;
+  /** A heartbeat more than this long after the last one means the tab was hidden; the gap earns nothing. */
+  private beatGapMs: number;
   // Measured from day one (PRD "Scale"): one-minute rolling message counts.
   private stats = { in: 0, out: 0, windowStart: Date.now(), lastIn: 0, lastOut: 0, tickMs: 0, peakConns: 0 };
 
@@ -98,6 +100,7 @@ export class PastureDO extends DurableObject<Env> {
     super(ctx, env);
     this.sql = ctx.storage.sql;
     this.expMs = Number(env.EXP_SECONDS ?? 60) * 1000;
+    this.beatGapMs = env.BEAT_GAP_SECONDS ? Number(env.BEAT_GAP_SECONDS) * 1000 : HEARTBEAT_MS * 1.5;
     this.pasture = new Pasture({ wildFloor: Number(env.WILD_FLOOR ?? 40), seed: Date.now() & 0x7fffffff });
     ctx.blockConcurrencyWhile(async () => this.load());
   }
@@ -371,7 +374,7 @@ export class PastureDO extends DurableObject<Env> {
     if (!o) return;
     if (o.primary !== ws) {
       // The primary tab went quiet (hidden or asleep): this visible one takes over.
-      if (o.primary && this.conns.has(o.primary) && now - o.lastBeatAt < BEAT_GAP_MS) return;
+      if (o.primary && this.conns.has(o.primary) && now - o.lastBeatAt < this.beatGapMs) return;
       const prev = o.primary;
       o.primary = ws;
       o.lastBeatAt = 0;
@@ -379,7 +382,7 @@ export class PastureDO extends DurableObject<Env> {
     }
     const gap = now - o.lastBeatAt;
     o.lastBeatAt = now;
-    if (gap > BEAT_GAP_MS) {
+    if (gap > this.beatGapMs) {
       this.sendYou(o);
       return;
     }

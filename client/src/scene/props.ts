@@ -183,8 +183,10 @@ export class Props {
           vec3 edge = mix(vec3(0.62, 0.84, 0.86), vec3(0.22, 0.32, 0.48), uNight);
           vec3 col = mix(edge, deep, smoothstep(0.55, 0.05, 1.0 - d));
           // Soft travelling ripples and a few glints.
-          float rip = sin(vWorld.x * 0.9 + uTime * 1.3) * sin(vWorld.z * 0.8 - uTime * 1.1);
-          col += smoothstep(0.86, 1.0, rip) * mix(0.22, 0.12, uNight);
+          // Three crossing wave trains so the glints never line up in a grid.
+          vec2 w = vWorld.xz;
+          float rip = sin(dot(w, vec2(0.83, 0.31)) + uTime * 1.3) + sin(dot(w, vec2(-0.42, 0.95)) * 1.3 - uTime * 1.05) + sin(dot(w, vec2(0.6, -0.7)) * 2.1 + uTime * 0.7);
+          col += smoothstep(2.35, 2.9, rip) * mix(0.2, 0.1, uNight);
           col = mix(col, uSky, 0.12);
           float shore = smoothstep(1.0, 0.93, d);
           gl_FragColor = vec4(col, 0.92 * shore);

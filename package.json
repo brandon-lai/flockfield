@@ -1,17 +1,15 @@
 {
   "name": "flockfield",
   "version": "1.0.0",
-  "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit && cd server && tsc --noEmit",
+    "test": "vitest run tests/shared.test.ts",
+    "test:server": "vitest run tests/server.test.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "description": "Flock: a shared browser pasture where everyone gets one sheep.",
   "dependencies": {
     "three": "0.186.1"
   },
@@ -20,5 +18,7 @@
     "typescript": "7.0.2",
     "vite": "8.3.5",
     "vitest": "5.0.5"
-  }
+  },
+  "private": true,
+  "type": "module"
 }
