@@ -98,7 +98,7 @@ How each was checked: **unit** = `tests/shared.test.ts`, **integration** = `test
 
 See the commit log for what verification found and fixed.
 
-Production is the real shared pasture: the client on Vercel (deployed from `main`), the Worker plus Durable Object on Cloudflare, and a real `IP_HASH_SECRET`. The pasture starts with 40 wild sheep and two test sheep I created while verifying production.
+Production is the real shared pasture: the client on Vercel (deployed from `main`), the Worker plus Durable Object on Cloudflare, and a real `IP_HASH_SECRET`. The pasture starts with 40 wild sheep and a handful of test sheep (country US) I created while verifying production; they rest in the barn after 30 days.
 
 **Owner checklist** (things only a person can do):
 1. **Play it on a phone and a 2020-era laptop.** Pinch zoom, frame rate, and whether the sound is pleasant or annoying at real volume.

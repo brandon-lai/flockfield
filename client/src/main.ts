@@ -118,6 +118,12 @@ link.onMessage = (m: ServerMsg) => {
       if (m.you) {
         myId = m.you.sheepId;
         setYou(m.you);
+      } else if (!placedCamera) {
+        // A spectator (no sheep of our own, e.g. rate-limited) starts above the middle of the flock.
+        // Decided by what the server says, not a timer: on a slow phone the timer fired before
+        // our own sheep arrived and the camera never found it.
+        placedCamera = true;
+        rig.jumpTo(0, 0, 60);
       }
       for (const s of sheep.values()) s.mine = s.id === myId;
       break;
@@ -225,13 +231,6 @@ function placeCamera(s: ClientSheep) {
   }
 }
 
-// Spectators (no sheep of their own) start in the middle of the flock.
-setTimeout(() => {
-  if (!placedCamera) {
-    placedCamera = true;
-    rig.jumpTo(0, 0, 60);
-  }
-}, 2500);
 
 // ------------------------------------------------------------ input
 
