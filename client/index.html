@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <title>Flock</title>
+    <meta name="description" content="A shared pasture. Everyone gets one sheep. Leave it open." />
+    <meta name="theme-color" content="#a9cf86" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta property="og:title" content="Flock" />
+    <meta property="og:description" content="A shared pasture. Everyone gets one sheep. Leave it open." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <canvas id="scene" aria-label="The pasture"></canvas>
+
+    <div id="loading" class="loading"><div class="loading-sheep"></div><p>Walking out to the pasture…</p></div>
+
+    <button id="badge" class="badge" hidden aria-label="Your sheep's level">
+      <span class="badge-level"><small>Lv</small><b id="badge-num">1</b></span>
+      <span class="badge-bar"><i id="badge-fill"></i></span>
+    </button>
+
+    <div id="status" class="status" hidden></div>
+
+    <div class="controls">
+      <button id="btn-find" class="round" aria-label="Find my sheep" title="Find my sheep" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/><path d="M12 1.5v3.2M12 19.3v3.2M1.5 12h3.2M19.3 12h3.2" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+      <button id="btn-sound" class="round" aria-label="Sound" title="Sound" aria-pressed="false">
+        <svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 8.8a4.5 4.5 0 0 1 0 6.4M18 6.3a8 8 0 0 1 0 11.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <button id="btn-about" class="round" aria-label="About Flock" title="About">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 11v5.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.4" fill="currentColor"/></svg>
+      </button>
+    </div>
+
+    <div id="label" class="label" hidden>This is your sheep.</div>
+    <div id="hint" class="hint" hidden>Your sheep grows while you're here. Try feeding it.</div>
+
+    <section id="card" class="card" hidden aria-live="polite"></section>
+
+    <dialog id="about" class="about">
+      <h2>Flock</h2>
+      <p>A shared pasture. Everyone who opens this page gets one sheep, and every sheep lives here together. They wander, graze, nap and play on their own, whether or not anyone is watching.</p>
+      <p><b>Your sheep grows while you're here.</b> It earns 1 EXP for each minute this tab is open and in view. Feeding and petting are just for fun. Nothing can be bought.</p>
+      <p><b>Your sheep lives in this browser.</b> There's no account. If you clear this browser's data, or open Flock somewhere else, you'll get a new lamb — the old one stays in the pasture, and after 30 days away it rests in the barn.</p>
+      <p><b>What we keep:</b> your sheep, its EXP, and the country your connection came from when it was born. No name, no IP address, nothing you type.</p>
+      <p class="fine">Tap any sheep to see where its owner is. Drag to look around, scroll or pinch to zoom.</p>
+      <form method="dialog"><button class="pill">Back to the pasture</button></form>
+    </dialog>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

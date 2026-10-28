@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "flockfield",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "durable_objects": {
+    "bindings": [{ "name": "PASTURE", "class_name": "PastureDO" }]
+  },
+  // SQLite-backed Durable Object storage (available on the free plan). The
+  // PRD proposed D1; one object's own SQLite is the same engine without a
+  // second binding or a flush lag between the sim and its records.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PastureDO"] }],
+  "observability": { "enabled": true }
+}
