@@ -187,7 +187,8 @@ button {
   top: calc(16px + var(--safe-t));
   left: 50%;
   transform: translateX(-50%);
-  max-width: min(420px, calc(100vw - 200px));
+  max-width: min(420px, calc(100vw - 420px));
+  min-width: 220px;
   padding: 9px 16px;
   border-radius: 999px;
   background: var(--paper);

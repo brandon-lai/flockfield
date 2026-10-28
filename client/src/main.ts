@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import "./style.css";
-import { nightAmount } from "../../shared/clock";
+import { DAY_MS, nightAmount } from "../../shared/clock";
 import { isLamb } from "../../shared/levels";
 import type { Intent, ServerMsg, SheepWire, You } from "../../shared/protocol";
 import { CHUNK, chunkId } from "../../shared/world";
@@ -61,6 +61,11 @@ const link: Link = offline
   ? new LocalLink(Math.min(3000, Math.max(1, Number(params.get("flock")) || 40)), Math.max(1, Number(params.get("level")) || 1))
   : new RemoteLink(SERVER!);
 ui.offline = offline;
+// Offline only: ?phase=0.8 shifts the local clock to that point in the day, for judging night by eye.
+if (offline && params.has("phase")) {
+  const want = Number(params.get("phase")) * DAY_MS;
+  link.offset = want - (Date.now() % DAY_MS);
+}
 
 const serverNow = () => Date.now() + link.offset;
 
@@ -186,7 +191,7 @@ function setYou(y: You, levelUp = false) {
 }
 
 function renderStatus(s: LinkStatus) {
-  if (s === "offline-mode") ui.setStatus("Offline pasture — not connected to the shared flock. Nothing here is saved.", true);
+  if (s === "offline-mode") ui.setStatus("Offline pasture — not shared, nothing is saved.", true);
   else if (s === "reconnecting" && welcomed) ui.setStatus("Reconnecting to the pasture…");
   else if (s === "unreachable") ui.setStatus("Can't reach the pasture right now. Still trying…", true);
   else if (s === "rate-limited" && !you) ui.setStatus("Lots of new sheep from your network today — you're watching for now.", true);
@@ -353,7 +358,7 @@ const emit: Emit = (kind, x, y, z, s) => {
   }
 };
 
-const stats = { fps: 0, frameMs: 0, drawn: 0, near: 0, known: 0 };
+const stats = { fps: 0, frameMs: 0, cpuMs: 0, drawn: 0, near: 0, known: 0 };
 let last = performance.now();
 let loaded = false;
 let lastFrameAt = 0;
@@ -383,6 +388,7 @@ function frame() {
   props.update(time, night, sky.fogColor);
   critters.update(time, rig.target, night, rig.dist, renderer.getPixelRatio());
   particles.update(dt);
+  stats.cpuMs = stats.cpuMs * 0.9 + (performance.now() - nowP) * 0.1;
   renderer.render(scene, rig.camera);
 
   // "This is your sheep."

@@ -1,0 +1,32 @@
+# Deploys the pasture Worker from main. The client is deployed by Vercel's
+# GitHub integration; this is the same rule for the backend: what runs in
+# production is a commit on main. Skips (green) until the repo has a
+# CLOUDFLARE_API_TOKEN secret -- see README "Owner checklist".
+name: worker
+on:
+  push:
+    branches: [main]
+    paths: ["server/**", "shared/**", ".github/workflows/worker.yml"]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Skip until a Cloudflare token is configured
+        if: env.CLOUDFLARE_API_TOKEN == ''
+        run: echo "No CLOUDFLARE_API_TOKEN secret; not deploying the Worker."
+      - uses: actions/checkout@v4
+        if: env.CLOUDFLARE_API_TOKEN != ''
+      - uses: actions/setup-node@v4
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        with: { node-version: 22 }
+      - name: Test
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        run: npm ci && npm test
+      - name: Deploy
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        working-directory: server
+        run: npm ci && npx wrangler deploy --message "${GITHUB_SHA}"

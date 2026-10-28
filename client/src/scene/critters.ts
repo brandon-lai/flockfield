@@ -83,11 +83,11 @@ export class Critters {
           gl_Position = projectionMatrix * mv;
           float blink = smoothstep(0.2, 1.0, sin(uTime * (1.2 + r.z) + r.x * 50.0));
           vA = blink * uNight;
-          gl_PointSize = uPx * 0.5 * 300.0 / -mv.z;
+          gl_PointSize = uPx * 1100.0 / -mv.z;
         }`,
       fragmentShader: /* glsl */ `
         varying float vA;
-        void main(){ float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.0, d); gl_FragColor = vec4(1.0, 0.93, 0.55, a * vA); }`,
+        void main(){ float d = length(gl_PointCoord - 0.5); float a = smoothstep(0.5, 0.0, d); a = a * a * 0.7 + smoothstep(0.12, 0.0, d); gl_FragColor = vec4(1.0, 0.93, 0.55, a * vA); }`,
     });
     this.flies = new THREE.Points(fg, this.flyMat);
     this.flies.frustumCulled = false;

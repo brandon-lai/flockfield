@@ -7,7 +7,7 @@ import { nightAmount, sunHeight } from "../../../shared/clock";
 const C = (h: string) => new THREE.Color(h);
 const DAY = { sky: C("#fff4dc"), ground: C("#87ad62"), sun: C("#fff0d2"), fog: C("#bcd99c") };
 const DUSK = { sky: C("#ffd2a8"), ground: C("#8a8f62"), sun: C("#ffb27a"), fog: C("#e4c69a") };
-const NIGHT = { sky: C("#7088c8"), ground: C("#26324e"), sun: C("#b9c8ff"), fog: C("#2b3858") };
+const NIGHT = { sky: C("#93a3cc"), ground: C("#2c3a58"), sun: C("#c6d2f5"), fog: C("#2b3858") };
 
 export class Sky {
   readonly hemi = new THREE.HemisphereLight(0xffffff, 0x88aa66, 1.9);

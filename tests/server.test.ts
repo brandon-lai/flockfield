@@ -21,7 +21,7 @@ beforeAll(async () => {
   proc = spawn(
     "npx",
     ["wrangler", "dev", "--port", String(PORT), "--var", `EXP_SECONDS:${EXP_SECONDS}`, "--var", "REGISTER_PER_HOUR:5", "--var", "BEAT_GAP_SECONDS:1.5", "--persist-to", state],
-    { cwd: join(__dirname, "../server"), stdio: "ignore", detached: true },
+    { cwd: new URL("../server", import.meta.url).pathname, stdio: "ignore", detached: true },
   );
   try {
     await fetch(B);
