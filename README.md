@@ -98,7 +98,7 @@ How each was checked: **unit** = `tests/shared.test.ts`, **integration** = `test
 
 See the commit log for what verification found and fixed.
 
-Production is the real shared pasture: the client on Vercel (deployed from `main`), the Worker plus Durable Object on Cloudflare, and a real `IP_HASH_SECRET`. The pasture starts with 40 wild sheep and a handful of test sheep (country US) I created while verifying production; they rest in the barn after 30 days.
+Production is the real shared pasture: the client on Vercel (deployed from `main`), the Worker plus Durable Object on Cloudflare, and a real `IP_HASH_SECRET`. The pasture starts with 40 wild sheep and about ten test sheep (country US) created by my verification browsers; they rest in the barn after 30 days.
 
 **Owner checklist** (things only a person can do):
 1. **Play it on a phone and a 2020-era laptop.** Pinch zoom, frame rate, and whether the sound is pleasant or annoying at real volume.
@@ -108,7 +108,8 @@ Production is the real shared pasture: the client on Vercel (deployed from `main
    gh secret set CLOUDFLARE_API_TOKEN --repo brandon-lai/flockfield
    gh secret set CLOUDFLARE_ACCOUNT_ID --repo brandon-lai/flockfield --body 78d3d855efbaa5308c3f0585e34b5d45
    ```
-3. The Cloudflare account had no workers.dev subdomain, so the first deploy registered `flockfield-server.workers.dev`. That name is account-wide; rename it in the dashboard (Workers → Subdomain) if you'd rather have another, then update `VITE_PASTURE_URL` in Vercel.
-4. Tune by feel: behaviour durations (`shared/sim.ts`), the EXP curve (`shared/levels.ts`), the wild-sheep floor (`WILD_FLOOR`).
+3. **Look at the registration limit in production.** The logic is covered by the integration test, and production does answer 429. But about ten registrations from this machine got through in the first eight minutes before it started refusing, against a limit of 5. I couldn't reconstruct why; my egress IP looked stable from curl and Chrome. Next step: run `wrangler tail flockfield --format json` and compare `cf-connecting-ip` across a few registrations.
+4. The Cloudflare account had no workers.dev subdomain, so the first deploy registered `flockfield-server.workers.dev`. That name is account-wide; rename it in the dashboard (Workers → Subdomain) if you'd rather have another, then update `VITE_PASTURE_URL` in Vercel.
+5. Tune by feel: behaviour durations (`shared/sim.ts`), the EXP curve (`shared/levels.ts`), the wild-sheep floor (`WILD_FLOOR`).
 
 `/stats` on the Worker reports connections, live/owned/wild sheep, messages per second and tick cost. Watch it before the single object needs splitting.
